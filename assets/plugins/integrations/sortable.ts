@@ -6,11 +6,8 @@ export class SortablePlugin implements DatagridPlugin {
 	}
 
 	onDatagridInit(datagrid: Datagrid): boolean {
-		datagrid.ajax.addEventListener('before', (event) => {
-			// TODO old ln 694... wtf?
-		})
-
 		this.sortable.initSortable(datagrid);
+		this.sortable.initSortableTree(datagrid);
 
 		datagrid.ajax.addEventListener('success', ({detail: {payload}}) => {
 			if (payload._datagrid_sort) {

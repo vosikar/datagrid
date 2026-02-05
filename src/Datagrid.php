@@ -403,7 +403,7 @@ class Datagrid extends Control
 		}
 
 		if ($this->isTreeView()) {
-			$template->add('treeViewHasChildrenColumn', $this->treeViewHasChildrenColumn);
+			$template->treeViewHasChildrenColumn = $this->treeViewHasChildrenColumn;
 		}
 
 		$template->rows = $rows;
@@ -1073,14 +1073,7 @@ class Datagrid extends Control
 	public function setDefaultFilter(array $defaultFilter, bool $useOnReset = true): self
 	{
 		foreach ($defaultFilter as $key => $value) {
-			/** @var Filter|null $filter */
 			$filter = $this->getFilter($key);
-
-			if ($filter === null) {
-				throw new DatagridException(
-					sprintf('Can not set default value to nonexisting filter [%s]', $key)
-				);
-			}
 
 			if ($filter instanceof FilterMultiSelect && !is_array($value)) {
 				throw new DatagridException(
@@ -1383,7 +1376,14 @@ class Datagrid extends Control
 		}
 
 		$storedFilters = $this->getStorageData('_grid_filters', []);
+		$hasNonEmptyFilter = false;
+
 		foreach ($values as $key => $value) {
+			/**
+			 * Check if value is empty
+			 */
+			$isEmpty = is_iterable($value) ? ArraysHelper::testEmpty($value) : $value === '' || $value === null;
+
 			/**
 			 * Storage stuff
 			 */
@@ -1399,14 +1399,19 @@ class Datagrid extends Control
 			$storedFilters[(string) $key] = $value;
 
 			/**
-			 * Other stuff
+			 * Only add non-empty filters to the persistent parameter
 			 */
-			$this->filter[$key] = $value;
+			if (!$isEmpty) {
+				$this->filter[$key] = $value;
+				$hasNonEmptyFilter = true;
+			} else {
+				unset($this->filter[$key]);
+			}
 		}
 
 		$this->saveStorageData('_grid_filters', $storedFilters);
 
-		if ($values->count() > 0) {
+		if ($hasNonEmptyFilter) {
 			$this->saveStorageData('_grid_has_filtered', 1);
 		}
 
@@ -1903,7 +1908,7 @@ class Datagrid extends Control
 			throw new UnexpectedValueException();
 		}
 
-		$template->add('toggle_detail', $id);
+		$template->toggle_detail = $id;
 
 		if ($this->itemsDetail === null) {
 			throw new UnexpectedValueException();
